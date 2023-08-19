@@ -2,6 +2,10 @@ FROM osrf/ros:humble-desktop
 
 ARG USERNAME=assume
 
+
+#############################################
+# --- Basic setup ---
+
 # Update
 RUN apt update && \
     apt install sudo vim curl tree -y
@@ -13,12 +17,7 @@ RUN TZ=Asia/Taipei && \
     echo $TZ > /etc/timezone && \
     dpkg-reconfigure -f noninteractive tzdata 
 
-# add user with default bash
-# --disabled-password to disable run passwd, 
-# the user account will active until passwd is set
-# --gecos '' makes adduser only ask info we specified
-# adduser to sudo group
-# make user login without password by echo NOPASSWD to user priviledge settings
+# Add user
 RUN adduser --disabled-password --gecos '' --shell /bin/bash ${USERNAME} && \
     adduser ${USERNAME} sudo && \
     echo "${USERNAME} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
@@ -27,6 +26,8 @@ RUN adduser --disabled-password --gecos '' --shell /bin/bash ${USERNAME} && \
 USER ${USERNAME}
 WORKDIR /home/${USERNAME}
 
+
+#############################################
 # --- Install required packages ---
 RUN curl -sSL http://get.gazebosim.org | sh
 RUN sudo apt update && sudo apt install \
@@ -47,8 +48,25 @@ RUN sudo apt update && sudo apt install \
              libglew-dev ffmpeg libboost-system-dev libeigen3-dev -y
 
 
+#############################################
 # --- Build Pangolin from source ---
 RUN git clone https://github.com/stevenlovegrove/Pangolin.git
 RUN mkdir -p /home/${USERNAME}/Pangolin/build
 RUN cd Pangolin/build && cmake .. && cmake --build .
 
+
+#############################################
+# --- Build ORB-SLAM3 from source
+WORKDIR /home/${USERNAME}
+
+RUN git clone https://github.com/UZ-SLAMLab/ORB_SLAM3.git ~/ORB_SLAM3
+
+# Change to c++14 for fixing compile error
+# Ref : https://github.com/UZ-SLAMLab/ORB_SLAM3/issues/387
+# Ref : https://github.com/Soldann/MORB_SLAM/issues/3
+RUN sed -i 's/++11/++14/g' ORB_SLAM3/CMakeLists.txt && \
+    sed -i 's/++11/++14/g' ORB_SLAM3/Thirdparty/g2o/CMakeLists.txt && \
+    sed -i 's/++11/++14/g' ORB_SLAM3/Thirdparty/Sophus/CMakeLists.txt
+
+RUN cd ORB_SLAM3 && ./build.sh && \
+    cd ORB_SLAM3/Thirdparty/Sophus/build && sudo make install
