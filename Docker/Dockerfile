@@ -1,12 +1,11 @@
 FROM osrf/ros:humble-desktop
 
 ARG USERNAME=assume
+ARG ROS_ORB_WS=orbslam3_ws
 
 
 #############################################
 # --- Basic setup ---
-
-# Update
 RUN apt update && \
     apt install sudo vim curl tree -y
 
@@ -61,7 +60,7 @@ WORKDIR /home/${USERNAME}
 
 RUN git clone https://github.com/UZ-SLAMLab/ORB_SLAM3.git ~/ORB_SLAM3
 
-# Change to c++14 for fixing compile error
+# Change to c++14 for compile error
 # Ref : https://github.com/UZ-SLAMLab/ORB_SLAM3/issues/387
 # Ref : https://github.com/Soldann/MORB_SLAM/issues/3
 RUN sed -i 's/++11/++14/g' ORB_SLAM3/CMakeLists.txt && \
@@ -69,4 +68,27 @@ RUN sed -i 's/++11/++14/g' ORB_SLAM3/CMakeLists.txt && \
     sed -i 's/++11/++14/g' ORB_SLAM3/Thirdparty/Sophus/CMakeLists.txt
 
 RUN cd ORB_SLAM3 && ./build.sh && \
-    cd ORB_SLAM3/Thirdparty/Sophus/build && sudo make install
+    cd Thirdparty/Sophus/build && sudo make install
+
+
+#############################################
+# --- Build ros2-orbslam3 package ---
+RUN mkdir -p /home/${USERNAME}/${ROS_ORB_WS}/src
+
+WORKDIR /home/${USERNAME}/${ROS_ORB_WS}
+
+RUN colcon build && git clone https://github.com/zang09/ORB_SLAM3_ROS2.git ./src/orbslam3_ros2
+
+# Fix path error and colcon build error
+# Ref : https://github.com/alsora/ros2-ORB_SLAM2/issues/8#issuecomment-1461570970
+RUN sed -i 's/foxy\/lib\/python3.8/humble\/lib\/python3.10/g' src/orbslam3_ros2/CMakeLists.txt && \
+    sed -i 's/Pangolin)/Pangolin OpenCV)/g' src/orbslam3_ros2/CMakeLists.txt && \
+    sed -i 's/Install\/ORB_SLAM\/ORB_SLAM3/ORB_SLAM3/g' src/orbslam3_ros2/CMakeModules/FindORB_SLAM3.cmake && \
+    # Source and build the package
+    . /opt/ros/humble/setup.sh && colcon build --symlink-install --packages-select orbslam3
+
+#############################################
+# --- Fin setup ---
+WORKDIR /home/${USERNAME}/ros_ws
+
+CMD ["bash"]

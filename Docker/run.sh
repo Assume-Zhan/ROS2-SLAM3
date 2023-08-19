@@ -15,8 +15,7 @@ docker build -t $IMAGE_NAME -f $DOCKERFILE .
 
 # run
 docker run \
-    -it \
-    --rm \
+    -it --rm \
     --gpus all \
     -h $(hostname) $2 \
     --network host \
