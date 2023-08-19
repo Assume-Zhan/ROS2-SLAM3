@@ -29,7 +29,7 @@ WORKDIR /home/${USERNAME}
 #############################################
 # --- Install required packages ---
 RUN curl -sSL http://get.gazebosim.org | sh
-RUN sudo apt update && sudo apt install \
+RUN sudo apt update && sudo apt install software-properties-common \
              # ROS2 navigation and localization packages
              ros-$ROS_DISTRO-navigation2 \
              ros-$ROS_DISTRO-nav2-bringup \
@@ -87,8 +87,14 @@ RUN sed -i 's/foxy\/lib\/python3.8/humble\/lib\/python3.10/g' src/orbslam3_ros2/
     # Source and build the package
     . /opt/ros/humble/setup.sh && colcon build --symlink-install --packages-select orbslam3
 
-#############################################
-# --- Fin setup ---
 WORKDIR /home/${USERNAME}/ros_ws
 
-CMD ["bash"]
+#############################################
+# --- Optional - fish shell setup ---
+RUN sudo apt-add-repository ppa:fish-shell/release-3
+RUN sudo apt install fish -y
+COPY config/fish_plugin.sh /home/${USERNAME}/fish_install.sh
+RUN /home/${USERNAME}/fish_install.sh
+
+# Enter container with fish shell
+CMD ["fish"]
