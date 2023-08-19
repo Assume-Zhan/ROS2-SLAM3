@@ -93,8 +93,12 @@ WORKDIR /home/${USERNAME}/ros_ws
 # --- Optional - fish shell setup ---
 RUN sudo apt-add-repository ppa:fish-shell/release-3
 RUN sudo apt install fish -y
+
 COPY config/fish_plugin.sh /home/${USERNAME}/fish_install.sh
+COPY config/startup.sh /home/${USERNAME}/startup.sh
+
 RUN /home/${USERNAME}/fish_install.sh
+RUN /home/${USERNAME}/startup.sh
 
 # Enter container with fish shell
 CMD ["fish"]
