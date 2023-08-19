@@ -27,16 +27,28 @@ RUN adduser --disabled-password --gecos '' --shell /bin/bash ${USERNAME} && \
 USER ${USERNAME}
 WORKDIR /home/${USERNAME}
 
-# Install required ROS2 packages
+# --- Install required packages ---
 RUN curl -sSL http://get.gazebosim.org | sh
-RUN sudo apt update
-RUN sudo apt install \
-             ros-humble-navigation2 \
-             ros-humble-nav2-bringup \
-             ros-humble-turtlebot3 \
-             ros-humble-turtlebot3-gazebo \
-             ros-humble-joint-state-publisher-gui \
-             ros-humble-xacro \
-             ros-humble-gazebo-ros-pkgs \
-             ros-humble-rqt-robot-steering \ 
-             ros-humble-robot-localization -y
+RUN sudo apt update && sudo apt install \
+             # ROS2 navigation and localization packages
+             ros-$ROS_DISTRO-navigation2 \
+             ros-$ROS_DISTRO-nav2-bringup \
+             ros-$ROS_DISTRO-turtlebot3 \
+             ros-$ROS_DISTRO-turtlebot3-gazebo \
+             ros-$ROS_DISTRO-joint-state-publisher-gui \
+             ros-$ROS_DISTRO-xacro \
+             ros-$ROS_DISTRO-gazebo-ros-pkgs \
+             ros-$ROS_DISTRO-rqt-robot-steering \ 
+             ros-$ROS_DISTRO-robot-localization \
+             ros-$ROS_DISTRO-vision-opencv \ 
+             ros-$ROS_DISTRO-message-filters \
+             # Install orb-slam required packages
+             libopencv-dev opencv-data \
+             libglew-dev ffmpeg libboost-system-dev libeigen3-dev -y
+
+
+# --- Build Pangolin from source ---
+RUN git clone https://github.com/stevenlovegrove/Pangolin.git
+RUN mkdir -p /home/${USERNAME}/Pangolin/build
+RUN cd Pangolin/build && cmake .. && cmake --build .
+
