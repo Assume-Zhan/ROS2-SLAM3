@@ -18,7 +18,7 @@ docker run -it $1 \
     --gpus all \
     --name $CONTAINER_NAME \
     --network host --privileged \
-    -h $(hostname) $2 \
+    -h $(hostname) \
     -e DISPLAY=$DISPLAY \
     -e XAUTHORITY=/tmp/xauth \
     -v ~/.Xauthority:/tmp/xauth \
